@@ -23,6 +23,9 @@ volobuev@t1.chem.umn.edu
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <linux/if_ether.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <net/if.h>
 
 #define ETH_HW_ADDR_LEN 6
 #define IP_ADDR_LEN 4
@@ -61,6 +64,8 @@ int main(int argc,char** argv){
 struct in_addr src_in_addr,targ_in_addr;
 struct arp_packet pkt;
 struct sockaddr sa;
+/** MAC cím tárolásához**/
+struct ifreq req;
 int sock;
 
 if(argc != 6)die(usage);
@@ -68,8 +73,17 @@ if(argc != 6)die(usage);
 sock=socket(AF_INET,SOCK_PACKET,htons(ETH_P_RARP));
 if(sock<0){
         perror("socket");
-        exit(1);
+exit(1);
         }
+
+/** Retrieve additional information about iface **/
+memset(&req, 0, sizeof(req));
+strncpy(req.ifr_name, argv[5], IF_NAMESIZE - 1);
+    if (ioctl(sock, SIOCGIFHWADDR, &req) < 0) {
+            perror("ioctl");
+            exit(EXIT_FAILURE);
+        }
+
 
 pkt.frame_type = htons(ARP_FRAME_TYPE);
 pkt.hw_type = htons(ETHER_HW_TYPE);
@@ -80,8 +94,15 @@ pkt.op=htons(OP_ARP_REQUEST);
 
 get_hw_addr(pkt.targ_hw_addr,argv[4]);
 get_hw_addr(pkt.rcpt_hw_addr,argv[4]);
-get_hw_addr(pkt.src_hw_addr,argv[2]);
-get_hw_addr(pkt.sndr_hw_addr,argv[2]);
+
+if( strcmp(argv[2],"iface") == 0 ) {
+    memcpy(pkt.src_hw_addr,req.ifr_hwaddr.sa_data,ETH_HW_ADDR_LEN);
+    memcpy(pkt.sndr_hw_addr,req.ifr_hwaddr.sa_data,ETH_HW_ADDR_LEN);
+}
+else {
+    get_hw_addr(pkt.src_hw_addr,argv[2]);
+    get_hw_addr(pkt.sndr_hw_addr,argv[2]);
+}
 
 get_ip_addr(&src_in_addr,argv[1]);
 get_ip_addr(&targ_in_addr,argv[3]);
