@@ -36,8 +36,8 @@ volobuev@t1.chem.umn.edu
 
 #define DEFAULT_DEVICE "eth0"
 
-char usage[]={"send_arp: sends out custom ARP packet. yuri volobuev'97\n\
-\tusage: send_arp src_ip_addr src_hw_addr targ_ip_addr tar_hw_addr iface\n\n"};
+char usage[]={"Usage: send_arp src_ip_addr src_hw_addr targ_ip_addr tar_hw_addr iface\n\
+    \t You can use 'iface' as the HW addr of the iface."};
 
 struct arp_packet {
         u_char targ_hw_addr[ETH_HW_ADDR_LEN];
